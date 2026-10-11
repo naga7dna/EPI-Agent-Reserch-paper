@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// A user-created folder that groups saved papers (e.g. "Thesis references")
+model Collection {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  color       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  papers      SavedPaper[]
+}
+
+// A paper bookmarked by the user into a collection.
+// `paperId` is the external id (Semantic Scholar corpus id / OpenAlex id),
+// so the same paper can be saved only once per collection.
+model SavedPaper {
+  id            String     @id @default(cuid())
+  externalId    String
+  collectionId  String
+  doi           String?
+  title         String
+  abstract      String?
+  authors       String
+  year          Int?
+  venue         String?
+  citationCount Int       @default(0)
+  openAccessPdf String?
+  tldr          String?
+  fieldsOfStudy String
+  pdfUrl        String?
+  url           String?
+  notes         String?
+  starred       Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  collection    Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, externalId])
+  @@index([collectionId])
+}
+
+// Recent searches (for autocomplete / quick re-run)
+model SearchHistory {
+  id        String   @id @default(cuid())
+  query     String
+  filters   String
+  resultCount Int    @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
